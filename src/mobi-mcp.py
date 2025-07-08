@@ -1,6 +1,6 @@
+import argparse
 from os import getenv
 
-import dotenv
 from mcp.server import FastMCP
 
 from mobi import MobiClient
@@ -12,9 +12,14 @@ def init_mobi_client() -> MobiClient:
     password = getenv("MOBI_PASSWORD")
     return MobiClient(base_url, username, password)
 
+def parse_arguments():
+    parser = argparse.ArgumentParser(description="Mobi MCP Server")
+    parser.add_argument("--sse", action="store_true", help="Start the MCP server with SSE transport")
+    return parser.parse_args()
+
 
 if __name__ == "__main__":
-    dotenv.load_dotenv()
+    args = parse_arguments()
     mcp: FastMCP = FastMCP('Mobi MCP Server')
     mobi: MobiClient = init_mobi_client()
 
@@ -65,5 +70,9 @@ if __name__ == "__main__":
         """
         return mobi.get_ontology_data(ontology_iri)
 
+
     # Start MCP server
-    mcp.run(transport="sse")
+    if args.sse:
+        mcp.run(transport="sse")
+    else:
+        mcp.run(transport="stdio")

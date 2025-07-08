@@ -7,12 +7,37 @@ from mobi import MobiClient
 
 
 def init_mobi_client() -> MobiClient:
+    """
+    Initializes and returns an instance of the MobiClient class.
+
+    This function retrieves the required credentials and base URL from
+    environment variables and uses them to initialize a MobiClient object.
+    It ensures secure configuration by fetching the necessary details
+    dynamically.
+
+    :raises KeyError: If any of the required environment variables
+        (MOBI_BASE_URL, MOBI_USERNAME, MOBI_PASSWORD) are missing.
+    :return: An instance of MobiClient initialized with the base URL and
+        credentials.
+    :rtype: MobiClient
+    """
     base_url = getenv("MOBI_BASE_URL")
     username = getenv("MOBI_USERNAME")
     password = getenv("MOBI_PASSWORD")
     return MobiClient(base_url, username, password)
 
+
 def parse_arguments():
+    """
+    Parses command-line arguments to configure and run the Mobi MCP Server.
+
+    This function sets up an argument parser to handle command-line arguments
+    for starting the Mobi MCP server. It allows specifying options such as
+    enabling the SSE transport mechanism.
+
+    :returns: Parsed arguments as a namespace object.
+    :rtype: argparse.Namespace
+    """
     parser = argparse.ArgumentParser(description="Mobi MCP Server")
     parser.add_argument("--sse", action="store_true", help="Start the MCP server with SSE transport")
     return parser.parse_args()

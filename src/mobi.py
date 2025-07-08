@@ -12,8 +12,34 @@ rest_context: str = "mobirest"
 
 
 class MobiClient:
+    """
+    Represents a client for accessing and interacting with a Mobi API. This class facilitates
+    operations such as retrieving records, fetching ontology data, performing entity searches,
+    and executing HTTP requests with proper authorization and optional certificate verification.
+
+    Designed to interface with the REST API, this client provides methods that simplify common
+    use cases while automatically handling authentication, URL construction, and request execution.
+    It can be used to support various catalog-based and ontology-driven workflows.
+
+    :ivar base_url: The base URL for the API endpoint.
+    :type base_url: str
+    :ivar username: Username for authentication.
+    :type username: str
+    :ivar password: Password for authentication.
+    :type password: str
+    :ivar ignore_cert: Whether to ignore SSL certificate verification.
+    :type ignore_cert: bool
+    """
 
     def __init__(self, base_url: str, username: str, password: str, ignore_cert: bool = False):
+        """
+        Initializes the instance with the provided parameters.
+
+        :param base_url: The base URL of the API or system to connect to.
+        :param username: The username to authenticate the connection.
+        :param password: The password associated with the username for authentication.
+        :param ignore_cert: Whether or not to ignore SSL certificate validation. Defaults to False.
+        """
         self.base_url: str = base_url
         self.username: str = username
         self.password: str = password
@@ -164,6 +190,9 @@ class MobiClient:
 
 
 if __name__ == "__main__":
+    """
+    Simple testing main functionality 
+    """
     dotenv.load_dotenv()
     base_url = getenv("MOBI_BASE_URL")
     username = getenv("MOBI_USERNAME")

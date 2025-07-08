@@ -19,8 +19,8 @@ configure the application to use your MCP server by modifying the
 {
   "mcpServers": {
     "mobi": {
-      "command": "~/git/mobi-mcp/.venv/bin/python",
-      "args": ["~/git/mobi-mcp/src/mobi-mcp.py"],
+      "command": "/Users/ben.gould/git/mobi-mcp/.venv/bin/python",
+      "args": ["/Users/ben.gould/git/mobi-mcp/src/mobi-mcp.py"],
       "env": {
         "MOBI_BASE_URL": "https://localhost:8443",
         "MOBI_USERNAME": "admin",
@@ -31,6 +31,7 @@ configure the application to use your MCP server by modifying the
   }
 }
 ```
+**-- Note: You'll have to adjust the paths as absolute paths are required :)**
 
 Claude Desktop leverages the stdio MCP transport, but this server also supports SSE as well (you can run the `mobi-mcp`
 python script with the argument `--sse`).  

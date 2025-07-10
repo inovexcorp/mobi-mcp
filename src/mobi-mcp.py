@@ -24,7 +24,8 @@ def init_mobi_client() -> MobiClient:
     base_url = getenv("MOBI_BASE_URL")
     username = getenv("MOBI_USERNAME")
     password = getenv("MOBI_PASSWORD")
-    return MobiClient(base_url, username, password)
+    ignore_cert = getenv("MOBI_IGNORE_CERT", "false").lower() == "true"
+    return MobiClient(base_url, username, password, ignore_cert=ignore_cert)
 
 
 def parse_arguments():

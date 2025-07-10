@@ -218,7 +218,7 @@ class MobiClient:
 
     def create_ontology(self, rdf_string: str, rdf_format: str, title: str, description: str,
                         markdown_description: str | None = None,
-                        keywords: list[str] | None = None):
+                        keywords: list[str] | None = None) -> None:
         """
         Creates a new ontology by sending a request to a specified URL endpoint. The ontology is created
         using RDF data provided in the input arguments. Additional metadata such as title, description,
@@ -269,34 +269,9 @@ class MobiClient:
                 )
 
                 # Process response similar to _make_request method
-                if not response.ok:
-                    print(f"HTTP Error {response.status_code}: {response.reason}")
-                    print(f"Response content: {response.text[:500]}...")
-                    return None
-
-                # Check if response has content
-                if not response.text.strip():
-                    print("Warning: Empty response received")
-                    return {}
-
-                # Check if response is JSON
-                content_type = response.headers.get('content-type', '').lower()
-                if 'application/json' not in content_type:
-                    print(f"Warning: Response is not JSON. Content-Type: {content_type}")
-                    print(f"Response content: {response.text[:500]}...")
-                    return None
-                else:
-                    # Parse JSON
-                    try:
-                        return response.json()
-                    except json.JSONDecodeError as e:
-                        print(f"JSON decode error: {e}")
-                        print(f"Response content: {response.text[:500]}...")
-                        return None
-
-        except Exception as e:
-            print(f"Request failed: {e}")
-            return None
+                if response.status_code is not 201:
+                    raise IOError(f"Error occurred creating ontology: {response.status_code}: "
+                                    f"{response.reason} - {response.text[:500]}")
         finally:
             # Clean up temporary file
             try:

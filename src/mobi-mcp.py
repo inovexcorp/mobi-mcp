@@ -157,6 +157,33 @@ if __name__ == "__main__":
         return mobi.get_shapes_graph(record_id, branch_id, commit_id)
 
 
+    @mcp.tool(name="create_ontology_record",
+              description="Create an ontology record with the specified metadata and JSON-LD content."
+                          "The metadata includes title, description, optional markdown description,"
+                          "and keywords. The JSON-LD content is the ontology itself.")
+    def create_ontology_record(jsonld: str, title: str, description: str, markdown_description: str | None = None,
+                               keywords: list[str] | None = None):
+        """
+        Creates an ontology record with the specified metadata and JSON-LD content.
+
+        This function processes the input parameters to create an ontology record in
+        a structured format. The ontology is generated using the provided JSON-LD
+        content and metadata parameters such as title, description, optional markdown
+        description, and keywords.
+
+        :param jsonld: A string containing the JSON-LD content for the ontology record.
+        :param title: The title of the ontology, provided as a string.
+        :param description: A brief description of the ontology, specified as a string.
+        :param markdown_description: An optional markdown-formatted description for
+            the ontology. If not provided, defaults to None.
+        :param keywords: An optional list of keywords associated with the ontology.
+            Each keyword should be provided as a string within the list. Defaults to None.
+        :return: The created ontology record as processed by the `mobi.create_ontology`
+            function.
+        """
+        return mobi.create_ontology(jsonld, title, description, markdown_description, keywords)
+
+
     # Start MCP server
     if args.sse:
         mcp.run(transport="sse")

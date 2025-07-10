@@ -212,6 +212,32 @@ class MobiClient:
             params["rdfFormat"] = rdf_format
         return self._make_request(url, "GET", params)
 
+    def create_ontology(self, jsonld: str, title: str, description: str, markdown_description: str | None = None,
+                        keywords: list[str] | None = None):
+        """
+        Creates an ontology by sending a POST request to the specified endpoint with the provided
+        details including title, description, markdown description, and keywords. The request data
+        is constructed and sent via the `_make_request` method while maintaining the relevant API standards.
+
+        :param jsonld: A JSON-LD string payload that contains the ontology data.
+        :param title: The title for the ontology.
+        :param description: A brief description of the ontology.
+        :param markdown_description: Optional; a rich-text description of the ontology in markdown format.
+        :param keywords: Optional; a list of keywords associated with the ontology.
+        :return: The response object from the `_make_request`, containing the server's response
+            to the request.
+        """
+        url: str = f"{self.base_url}/{rest_context}/ontologies"
+        params: dict = {
+            "title": title,
+            "description": description
+        }
+        if markdown_description:
+            params["markdown"] = markdown_description
+        if keywords:
+            params["keywords"] = ",".join(keywords)
+        return self._make_request(url, "POST", params)
+
     def _make_request(self, url: str, method: str, params: dict = None) -> Optional[Dict[Any, Any]]:
         """
         Sends an HTTP request and processes the response.
@@ -267,19 +293,3 @@ class MobiClient:
         except RequestException as e:
             print(f"Request failed: {e}")
             return None
-
-
-if __name__ == "__main__":
-    """
-    Simple testing main functionality 
-    """
-    dotenv.load_dotenv()
-    base_url = getenv("MOBI_BASE_URL")
-    username = getenv("MOBI_USERNAME")
-    password = getenv("MOBI_PASSWORD")
-    ignore_cert = getenv("MOBI_IGNORE_CERT")
-    action: MobiClient = MobiClient(base_url, username, password, ignore_cert=ignore_cert == "true")
-    print(action.get_shapes_graph('https://mobi.com/records#26538d7f-ac68-479d-b415-8ca75ca49313'))
-    # print(action.entity_search("Threat"))
-    # print()
-    # print(action.get_ontology_data("https://mobi.com/records#6a535eff-2beb-4749-8549-6bf7de956a4e"))

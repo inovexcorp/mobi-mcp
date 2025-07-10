@@ -52,29 +52,38 @@ if __name__ == "__main__":
     @mcp.tool(name="record_search",
               description="Search the mobi catalog for records matching the provided criteria.")
     def search_mobi_catalog_for_records(offset: int, limit: int, search_text: str | None = None,
-                                        keywords: list[str] | None = None):
+                                        keywords: list[str] | None = None,
+                                        types: list[str] | None = None):
         """
-        Search the mobi catalog for records that match the provided search criteria.
-        This function retrieves a list of records from the mobi catalog based on offset,
-        limit, and optional search terms or keywords.
+        Searches the mobi catalog for records based on the given criteria.
 
-        :param offset: The number of records to skip from the beginning of the 
-            catalog results.
+        This function allows filtering of records by providing criteria such as
+        offset for pagination, limit on the number of results, search text to be
+        matched against records, specific keywords, and types of records. This
+        is designed to interact with the mobi catalog and return a list of
+        relevant records that match the provided criteria.  Value types are:
+
+        :param offset: The starting index for the records to fetch (pagination offset).
         :type offset: int
         :param limit: The maximum number of records to retrieve.
         :type limit: int
-        :param search_text: Optional text string to search in the records' 
-            general information. If not provided, all records are considered.
+        :param search_text: Optionally, text to search for in the records. If None, the
+            search text filter will not be applied.
         :type search_text: str | None
-        :param keywords: Optional list of specific keywords to filter the 
-            records based on their metadata tags. If not provided, no keyword 
-            filters are applied.
+        :param keywords: Optionally, a list of keywords to match against records. If
+            None, no keyword filtering is applied.
         :type keywords: list[str] | None
-        :return: A list of records matching the provided offset, limit, and 
-            optional search criteria.
+        :param types: Optionally, a list of types to filter records by. If None, records
+            of all types will be included in the search results.  Valid types to specify are:
+            http://mobi.com/ontologies/ontology-editor#OntologyRecord (Ontology/Vocabulary),
+            http://mobi.com/ontologies/shapes-graph-editor#ShapesGraphRecord (SHACL),
+            http://mobi.com/ontologies/delimited#MappingRecord (Mappings),
+            http://mobi.com/ontologies/dataset#DatasetRecord (Datasets).
+        :type types: list[str] | None
+        :return: A list of records matching the provided criteria.
         :rtype: list
         """
-        return mobi.list_records(offset=offset, limit=limit, keywords=keywords, search_text=search_text)
+        return mobi.list_records(offset=offset, limit=limit, keywords=keywords, search_text=search_text, types=types)
 
 
     @mcp.tool(name="entity_search",
@@ -122,6 +131,29 @@ if __name__ == "__main__":
         :rtype: Optional[Dict[Any, Any]]
         """
         return mobi.get_ontology_data(ontology_iri)
+
+
+    @mcp.tool(name="get_shapes_graph", description="Get the shapes graph for a given record.")
+    def get_shapes_graph(record_id: str, branch_id: str | None = None, commit_id: str | None = None):
+        """
+        Fetches the shapes graph for a specified record, branch, and commit.
+
+        This function retrieves the shapes graph associated with the provided
+        record ID. Optionally, it can also target a specific branch ID or
+        commit ID within the record. This is useful for obtaining graph-related
+        properties and structures stored in the system.
+
+        :param record_id: The unique identifier for the record whose shapes
+            graph is to be fetched.
+        :param branch_id: The identifier for the branch within the record.
+            This is optional and can be `None` if not specifying a branch.
+        :param commit_id: The identifier for the commit within the record to
+            target. This is optional and can be `None` if not specifying a
+            commit.
+        :return: The shapes graph retrieved for the specified record, branch,
+            and commit.
+        """
+        return mobi.get_shapes_graph(record_id, branch_id, commit_id)
 
 
     # Start MCP server

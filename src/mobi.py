@@ -10,6 +10,13 @@ from requests import RequestException
 default_catalogs: str = "http://mobi.com/catalog-local"
 rest_context: str = "mobirest"
 
+record_types: list[str] = [
+    "http://mobi.com/ontologies/ontology-editor#OntologyRecord",
+    "http://mobi.com/ontologies/shapes-graph-editor#ShapesGraphRecord",
+    "http://mobi.com/ontologies/delimited#MappingRecord",
+    "http://mobi.com/ontologies/dataset#DatasetRecord",
+]
+
 
 class MobiClient:
     """
@@ -133,21 +140,29 @@ class MobiClient:
         return self._make_request(url, "GET", params)
 
     def list_records(self, catalog_id: str = default_catalogs, offset: int = 0, limit: int = 100,
-                     keywords: list[str] | None = None, search_text: str | None = None) -> dict:
+                     keywords: list[str] | None = None, search_text: str | None = None,
+                     types: list[str] | None = None) -> dict:
         """
-        Lists records from a catalog with optional filtering by keywords and search text.
+        List records from the specified catalog. This method retrieves a list of
+        records based on the provided filter criteria such as pagination offset,
+        limit, keywords, search text, or record types. It raises an error if the
+        specified record types are invalid.
 
-        This method allows retrieving records from a specified catalog. It supports
-        pagination using offset and limit parameters and can optionally filter records
-        based on keywords or a search text. The method returns the records in the form
-        of a dictionary.
-
-        :param catalog_id: The ID of the catalog from which to fetch records.
-        :param offset: Position from where to start fetching records in the catalog.
-        :param limit: Maximum number of records to fetch starting from the offset.
-        :param keywords: A list of keywords to filter the records.
-        :param search_text: Text to search within the catalog's records.
-        :return: A dictionary containing the fetched records.
+        :param catalog_id: The identifier of the catalog from which records will
+                           be retrieved. Defaults to `default_catalogs`.
+        :param offset: The starting point from which records are retrieved
+                       (for pagination purposes). Defaults to 0.
+        :param limit: The maximum number of records to be fetched. Defaults to 100.
+        :param keywords: A list of keywords to filter records by. Defaults to None.
+        :param search_text: Text to perform a full-text search on records.
+                            Defaults to None.
+        :param types: A list of record types to filter the results. If provided,
+                      it must contain valid types. Defaults to None.
+        :return: A dictionary containing the retrieved records, filtered
+                 according to the specified criteria.
+        :rtype: dict
+        :raises ValueError: If the provided `types` are not among the expected
+                            valid record types.
         """
         url = f"{self.base_url}/{rest_context}/catalogs/{urllib.parse.quote(catalog_id, safe='')}/records"
         params: dict = {
@@ -158,6 +173,43 @@ class MobiClient:
             params["keywords"] = ",".join(keywords)
         if search_text:
             params["searchText"] = search_text
+        if types:
+            params["type"] = ",".join(types)
+        return self._make_request(url, "GET", params)
+
+    def get_shapes_graph(self, record_id: str, branch_id: str | None = None, commit_id: str | None = None,
+                         rdf_format: str = "turtle"):
+        """
+        Fetches the shapes graph associated with the specified record.
+
+        This method communicates with a REST service to retrieve the shapes graph
+        for a specific record. Optionally, it allows filtering by branch ID, commit ID,
+        and specifying the preferred RDF format for the response data.
+
+        :param record_id: The unique identifier of the record for which the shapes
+            graph is being fetched.
+        :type record_id: str
+        :param branch_id: The identifier of the specific branch to fetch the shapes
+            graph from. Defaults to None.
+        :type branch_id: str | None
+        :param commit_id: The commit ID for which the shapes graph should be fetched.
+            Defaults to None.
+        :type commit_id: str | None
+        :param rdf_format: The format in which the RDF data should be returned.
+            Defaults to "turtle".
+        :type rdf_format: str
+        :return: The response of the HTTP GET request, typically containing the shapes
+            graph data in the specified format.
+        :rtype: Any
+        """
+        url = f"{self.base_url}/{rest_context}/shapes-graphs/{urllib.parse.quote(record_id, safe='')}"
+        params: dict = {}
+        if branch_id:
+            params["branchId"] = branch_id
+        if commit_id:
+            params["commitId"] = commit_id
+        if rdf_format:
+            params["rdfFormat"] = rdf_format
         return self._make_request(url, "GET", params)
 
     def _make_request(self, url: str, method: str, params: dict = None) -> Optional[Dict[Any, Any]]:
@@ -227,6 +279,7 @@ if __name__ == "__main__":
     password = getenv("MOBI_PASSWORD")
     ignore_cert = getenv("MOBI_IGNORE_CERT")
     action: MobiClient = MobiClient(base_url, username, password, ignore_cert=ignore_cert == "true")
-    print(action.entity_search("Threat"))
-    print()
-    print(action.get_ontology_data("https://mobi.com/records#6a535eff-2beb-4749-8549-6bf7de956a4e"))
+    print(action.get_shapes_graph('https://mobi.com/records#26538d7f-ac68-479d-b415-8ca75ca49313'))
+    # print(action.entity_search("Threat"))
+    # print()
+    # print(action.get_ontology_data("https://mobi.com/records#6a535eff-2beb-4749-8549-6bf7de956a4e"))

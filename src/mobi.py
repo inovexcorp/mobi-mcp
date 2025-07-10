@@ -132,6 +132,34 @@ class MobiClient:
         # make the request with the constructed parameters
         return self._make_request(url, "GET", params)
 
+    def list_records(self, catalog_id: str = default_catalogs, offset: int = 0, limit: int = 100,
+                     keywords: list[str] | None = None, search_text: str | None = None) -> dict:
+        """
+        Lists records from a catalog with optional filtering by keywords and search text.
+
+        This method allows retrieving records from a specified catalog. It supports
+        pagination using offset and limit parameters and can optionally filter records
+        based on keywords or a search text. The method returns the records in the form
+        of a dictionary.
+
+        :param catalog_id: The ID of the catalog from which to fetch records.
+        :param offset: Position from where to start fetching records in the catalog.
+        :param limit: Maximum number of records to fetch starting from the offset.
+        :param keywords: A list of keywords to filter the records.
+        :param search_text: Text to search within the catalog's records.
+        :return: A dictionary containing the fetched records.
+        """
+        url = f"{self.base_url}/{rest_context}/catalogs/{urllib.parse.quote(catalog_id, safe='')}/records"
+        params: dict = {
+            "offset": offset,
+            "limit": limit,
+        }
+        if keywords:
+            params["keywords"] = ",".join(keywords)
+        if search_text:
+            params["searchText"] = search_text
+        return self._make_request(url, "GET", params)
+
     def _make_request(self, url: str, method: str, params: dict = None) -> Optional[Dict[Any, Any]]:
         """
         Sends an HTTP request and processes the response.

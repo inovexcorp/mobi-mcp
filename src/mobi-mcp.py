@@ -49,7 +49,35 @@ if __name__ == "__main__":
     mobi: MobiClient = init_mobi_client()
 
 
-    @mcp.tool(name="search_mobi_catalog",
+    @mcp.tool(name="record_search",
+              description="Search the mobi catalog for records matching the provided criteria.")
+    def search_mobi_catalog_for_records(offset: int, limit: int, search_text: str | None = None,
+                                        keywords: list[str] | None = None):
+        """
+        Search the mobi catalog for records that match the provided search criteria.
+        This function retrieves a list of records from the mobi catalog based on offset,
+        limit, and optional search terms or keywords.
+
+        :param offset: The number of records to skip from the beginning of the 
+            catalog results.
+        :type offset: int
+        :param limit: The maximum number of records to retrieve.
+        :type limit: int
+        :param search_text: Optional text string to search in the records' 
+            general information. If not provided, all records are considered.
+        :type search_text: str | None
+        :param keywords: Optional list of specific keywords to filter the 
+            records based on their metadata tags. If not provided, no keyword 
+            filters are applied.
+        :type keywords: list[str] | None
+        :return: A list of records matching the provided offset, limit, and 
+            optional search criteria.
+        :rtype: list
+        """
+        return mobi.list_records(offset=offset, limit=limit, keywords=keywords, search_text=search_text)
+
+
+    @mcp.tool(name="entity_search",
               description="Search the mobi catalog for records whose metadata contain the provided string")
     def search_mobi_catalog_for_entities(search_for: str, offset: int, limit: int, types: list[str] | None = None,
                                          keywords: list[str] | None = None):

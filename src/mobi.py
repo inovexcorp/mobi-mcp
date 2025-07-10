@@ -218,7 +218,7 @@ class MobiClient:
 
     def create_ontology(self, rdf_string: str, rdf_format: str, title: str, description: str,
                         markdown_description: str | None = None,
-                        keywords: list[str] | None = None) -> None:
+                        keywords: list[str] | None = None) -> dict:
         """
         Creates a new ontology by sending a request to a specified URL endpoint. The ontology is created
         using RDF data provided in the input arguments. Additional metadata such as title, description,
@@ -272,6 +272,8 @@ class MobiClient:
                 if response.status_code is not 201:
                     raise IOError(f"Error occurred creating ontology: {response.status_code}: "
                                     f"{response.reason} - {response.text[:500]}")
+                else:
+                    return response.json()
         finally:
             # Clean up temporary file
             try:

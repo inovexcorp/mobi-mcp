@@ -10,6 +10,7 @@ from rdflib import Graph
 from requests import RequestException
 
 default_catalogs: str = "http://mobi.com/catalog-local"
+default_branch_type: str = "http://mobi.com/ontologies/catalog#Branch"
 rest_context: str = "mobirest"
 
 record_types: list[str] = [
@@ -178,6 +179,18 @@ class MobiClient:
         if types:
             params["type"] = ",".join(types)
         return self._make_request(url, "GET", params)
+
+    def create_branch_on_record(self, record_id: str, title: str, description: str, commit_iri: str,
+                                catalog_id: str = default_catalogs, branch_type: str = default_branch_type):
+        url: str = (f"{self.base_url}/{rest_context}/catalogs/{urllib.parse.quote(catalog_id, safe='')}"
+                    f"/records/{urllib.parse.quote(record_id, safe='')}/branches")
+        params: dict = {
+            "type": branch_type,
+            "title": title,
+            "description": description,
+            "commitId": commit_iri,
+        }
+        return self._make_request(url, "POST", params)
 
     def get_shapes_graph(self, record_id: str, branch_id: str | None = None, commit_id: str | None = None,
                          rdf_format: str = "turtle"):

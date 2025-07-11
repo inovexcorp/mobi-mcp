@@ -1,12 +1,10 @@
 import json
+import os
+import tempfile
 import urllib.parse
 from typing import Optional, Dict, Any
 
-import tempfile
-import os
-
 import rdflib
-
 import requests
 from rdflib import Graph
 from requests import RequestException
@@ -225,7 +223,7 @@ class MobiClient:
         optional markdown description, and keywords can also be supplied.
 
         The function constructs a request payload and sends it with the RDF content parsed and formatted
-        as a TTL file. It utilizes an HTTP POST method to interact with the external service.
+        as a TTL file. It uses an HTTP POST method to interact with the external service.
 
         :param rdf_string: The RDF data to be used for creating the ontology.
         :param rdf_format: The format of the RDF data provided (e.g., "xml", "turtle").
@@ -271,7 +269,7 @@ class MobiClient:
                 # Process response similar to _make_request method
                 if response.status_code is not 201:
                     raise IOError(f"Error occurred creating ontology: {response.status_code}: "
-                                    f"{response.reason} - {response.text[:500]}")
+                                  f"{response.reason} - {response.text[:500]}")
                 else:
                     return response.json()
         finally:

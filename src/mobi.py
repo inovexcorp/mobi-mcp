@@ -182,6 +182,28 @@ class MobiClient:
 
     def create_branch_on_record(self, record_id: str, title: str, description: str, commit_iri: str,
                                 catalog_id: str = default_catalogs, branch_type: str = default_branch_type):
+        """
+        Creates a branch on a specified record in the catalog. This method allows branching
+        off a specific record version, providing flexibility for version management and
+        content organization.
+
+        :param record_id: The unique identifier for the record to branch from.
+        :type record_id: str
+        :param title: The title of the new branch.
+        :type title: str
+        :param description: A description for the branch providing more context or details.
+        :type description: str
+        :param commit_iri: The commit identifier associated with the branch creation.
+        :type commit_iri: str
+        :param catalog_id: The identifier of the catalog where the record resides.
+            Defaults to `default_catalogs`.
+        :type catalog_id: str, optional
+        :param branch_type: The type of branch to be created, usually specifying behavior
+            or purpose. Defaults to `default_branch_type`.
+        :type branch_type: str, optional
+        :return: The response object resulting from the request to create the branch.
+        :rtype: object
+        """
         url: str = (f"{self.base_url}/{rest_context}/catalogs/{urllib.parse.quote(catalog_id, safe='')}"
                     f"/records/{urllib.parse.quote(record_id, safe='')}/branches")
         params: dict = {

@@ -7,9 +7,10 @@ from typing import Optional, Dict, Any
 import rdflib
 import requests
 from rdflib import Graph
-from requests import RequestException
+from requests import RequestException, Response
 
-default_catalogs: str = "http://mobi.com/catalog-local"
+default_catalog: str = "http://mobi.com/catalog-local"
+default_page_size: int = 100
 default_branch_type: str = "http://mobi.com/ontologies/catalog#Branch"
 rest_context: str = "mobirest"
 
@@ -51,11 +52,12 @@ class MobiClient:
         :param ignore_cert: Whether or not to ignore SSL certificate validation. Defaults to False.
         """
         self.base_url: str = base_url
+        self.rest_url: str = f"{base_url}/{rest_context}"
         self.username: str = username
         self.password: str = password
         self.ignore_cert: bool = ignore_cert
 
-    def get_record(self, record_id: str, catalog_id: str = default_catalogs) -> Optional[Dict[Any, Any]]:
+    def get_record(self, record_id: str, catalog_id: str = default_catalog) -> Optional[Dict[Any, Any]]:
         """
         Retrieves a record from the catalog by its identifier.
 
@@ -71,7 +73,7 @@ class MobiClient:
         :return: A dictionary containing the record data if found, otherwise None.
         :rtype: Optional[Dict[Any, Any]]
         """
-        url = (f"{self.base_url}/{rest_context}/catalogs/{urllib.parse.quote(catalog_id, safe='')}"
+        url = (f"{self.rest_url}/catalogs/{urllib.parse.quote(catalog_id, safe='')}"
                f"/records/{urllib.parse.quote(record_id, safe='')}")
         return self._make_request(url, "GET")
 
@@ -90,11 +92,11 @@ class MobiClient:
             otherwise None.
         :rtype: Optional[Dict[Any, Any]]
         """
-        url = f"{self.base_url}/{rest_context}/ontologies/{urllib.parse.quote(record_id, safe='')}"
+        url = f"{self.rest_url}/ontologies/{urllib.parse.quote(record_id, safe='')}"
         return self._make_request(url, "GET")
 
-    def entity_search(self, query: str, catalog_id: str = default_catalogs,
-                      offset: int = 0, limit: int = 100, sort: str = "entityName",
+    def entity_search(self, query: str, catalog_id: str = default_catalog,
+                      offset: int = 0, limit: int = default_page_size, sort: str = "entityName",
                       ascending: bool = True, types: list[str] | None = None,
                       keywords: list[str] | None = None) -> dict:
         """
@@ -127,7 +129,7 @@ class MobiClient:
                  search criteria.
         :rtype: dict
         """
-        url = f"{self.base_url}/{rest_context}/catalogs/{urllib.parse.quote(catalog_id, safe='')}/entities"
+        url = f"{self.rest_url}/catalogs/{urllib.parse.quote(catalog_id, safe='')}/entities"
         params = {
             "offset": offset,
             "limit": limit,
@@ -142,7 +144,7 @@ class MobiClient:
         # make the request with the constructed parameters
         return self._make_request(url, "GET", params)
 
-    def list_records(self, catalog_id: str = default_catalogs, offset: int = 0, limit: int = 100,
+    def list_records(self, catalog_id: str = default_catalog, offset: int = 0, limit: int = default_page_size,
                      keywords: list[str] | None = None, search_text: str | None = None,
                      types: list[str] | None = None) -> dict:
         """
@@ -167,7 +169,7 @@ class MobiClient:
         :raises ValueError: If the provided `types` are not among the expected
                             valid record types.
         """
-        url = f"{self.base_url}/{rest_context}/catalogs/{urllib.parse.quote(catalog_id, safe='')}/records"
+        url = f"{self.rest_url}/catalogs/{urllib.parse.quote(catalog_id, safe='')}/records"
         params: dict = {
             "offset": offset,
             "limit": limit,
@@ -181,7 +183,7 @@ class MobiClient:
         return self._make_request(url, "GET", params)
 
     def create_branch_on_record(self, record_id: str, title: str, description: str, commit_iri: str,
-                                catalog_id: str = default_catalogs, branch_type: str = default_branch_type):
+                                catalog_id: str = default_catalog, branch_type: str = default_branch_type):
         """
         Creates a branch on a specified record in the catalog. This method allows branching
         off a specific record version, providing flexibility for version management and
@@ -204,7 +206,7 @@ class MobiClient:
         :return: The response object resulting from the request to create the branch.
         :rtype: object
         """
-        url: str = (f"{self.base_url}/{rest_context}/catalogs/{urllib.parse.quote(catalog_id, safe='')}"
+        url: str = (f"{self.rest_url}/catalogs/{urllib.parse.quote(catalog_id, safe='')}"
                     f"/records/{urllib.parse.quote(record_id, safe='')}/branches")
         params: dict = {
             "type": branch_type,
@@ -239,7 +241,7 @@ class MobiClient:
             graph data in the specified format.
         :rtype: Any
         """
-        url = f"{self.base_url}/{rest_context}/shapes-graphs/{urllib.parse.quote(record_id, safe='')}"
+        url = f"{self.rest_url}/shapes-graphs/{urllib.parse.quote(record_id, safe='')}"
         params: dict = {}
         if branch_id:
             params["branchId"] = branch_id
@@ -248,6 +250,61 @@ class MobiClient:
         if rdf_format:
             params["rdfFormat"] = rdf_format
         return self._make_request(url, "GET", params)
+
+    def get_record_branches(self, record_iri: str, catalog_iri: str = default_catalog,
+                            offset: int = 0, limit: int = default_page_size) -> dict:
+        """
+        Retrieve the branches of a specific record within a catalog.
+
+        This method retrieves the branches associated with a given record within
+        a specific catalog. The branches represent different versions or states
+        of the record. The results are sorted by title in ascending order and
+        can be paginated using the ``offset`` and ``limit`` parameters.
+
+        :param record_iri: The IRI of the record for which branches
+                           are being retrieved. Must be a valid URI.
+        :param catalog_iri: The IRI of the catalog containing the record.
+                            If not specified, the ``default_catalog`` value
+                            is used.
+        :param offset: The index of the first branch to retrieve. Can
+                       be used for pagination. Defaults to 0.
+        :param limit: The maximum number of branches to retrieve. Can
+                      be used for pagination. Defaults to ``default_page_size``.
+        :return: A dictionary containing the branches and associated metadata.
+        """
+        url = (f"{self.rest_url}/catalogs/{urllib.parse.quote(catalog_iri, safe='')}"
+               f"/records/{urllib.parse.quote(record_iri, safe='')}/branches")
+        params: dict = {
+            "limit": limit,
+            "offset": offset,
+            "sort": "http://purl.org/dc/terms/title", # sort by title :)
+            "ascending": True # sort ascending
+        }
+        return self._make_request(url, "GET", params)
+
+    def update_ontology(self, record_iri: str, branch_iri: str, commit_iri: str, rdf_string: str,
+                        rdf_format: str) -> dict:
+        url: str = f"{self.rest_url}/ontologies/{urllib.parse.quote(record_iri, safe='')}"
+        params: dict = {
+            "branchId": branch_iri,
+            "commitId": commit_iri,
+        }
+        ttl_file_path = self._parse_rdf(rdf_string, rdf_format)
+        try:
+            # make request
+            response = self._make_file_request(url, ttl_file_path, method="PUT", params=params)
+            # Process response similar to _make_request method
+            if not response.ok:
+                raise IOError(f"Error occurred creating ontology: {response.status_code}: "
+                              f"{response.reason} - {response.text[:500]}")
+            else:
+                return response.json()
+        finally:
+            # Clean up the temporary file
+            try:
+                os.unlink(ttl_file_path)
+            except OSError:
+                pass  # File might already be deleted or not exist
 
     def create_ontology(self, rdf_string: str, rdf_format: str, title: str, description: str,
                         markdown_description: str | None = None,
@@ -268,7 +325,7 @@ class MobiClient:
         :param keywords: Optional list of keywords relevant to the ontology.
         :return: The response of the HTTP POST request made to create the ontology.
         """
-        url: str = f"{self.base_url}/{rest_context}/ontologies"
+        url: str = f"{self.rest_url}/ontologies"
 
         # Parse RDF and get temporary file path
         ttl_file_path = self._parse_rdf(rdf_string, rdf_format)
@@ -279,59 +336,45 @@ class MobiClient:
                 "title": title,
                 "description": description
             }
-
             if markdown_description:
                 data["markdown"] = markdown_description
             if keywords:
                 data["keywords"] = ",".join(keywords)
-
-            # Prepare files for multipart upload
-            with open(ttl_file_path, 'rb') as ttl_file:
-                files = {
-                    'file': ('ontology.ttl', ttl_file, 'text/turtle')
-                }
-
-                # Make request with multipart form data
-                # Important: Do NOT set Content-Type header - let requests handle it automatically
-                response = requests.post(
-                    url,
-                    data=data,
-                    files=files,
-                    auth=(self.username, self.password),
-                    verify=not self.ignore_cert
-                )
-
-                # Process response similar to _make_request method
-                if response.status_code is not 201:
-                    raise IOError(f"Error occurred creating ontology: {response.status_code}: "
-                                  f"{response.reason} - {response.text[:500]}")
-                else:
-                    return response.json()
+            # make request
+            response = self._make_file_request(url, ttl_file_path, data=data)
+            # Process response similar to _make_request method
+            if response.status_code != 201:
+                raise IOError(f"Error occurred creating ontology: {response.status_code}: "
+                              f"{response.reason} - {response.text[:500]}")
+            else:
+                return response.json()
         finally:
-            # Clean up temporary file
+            # Clean up the temporary file
             try:
                 os.unlink(ttl_file_path)
             except OSError:
                 pass  # File might already be deleted or not exist
 
-    def _parse_rdf(self, rdf_string: str, rdf_format: str) -> str:
-        """
-        Parse RDF data and serialize it to a temporary TTL file.
+    def _make_file_request(self, url: str, file_path: str, method: str = "POST", data: dict | None = None,
+                           params: dict | None = None,
+                           headers: dict | None = None) -> Response:
+        with open(file_path, 'rb') as ttl_file:
+            files = {
+                'file': ('ontology.ttl', ttl_file, 'text/turtle')
+            }
 
-        :param rdf_string: The RDF data as a string
-        :param rdf_format: The format of the input RDF data
-        :return: Path to the temporary TTL file
-        """
-        graph: Graph = rdflib.Graph().parse(data=rdf_string, format=rdf_format)
-
-        # Create a temporary file with .ttl extension
-        temp_file = tempfile.NamedTemporaryFile(mode='w', suffix='.ttl', delete=False)
-        temp_file_path = temp_file.name
-        temp_file.close()
-
-        # Serialize the graph to the temporary file in Turtle format
-        graph.serialize(destination=temp_file_path, format='turtle')
-        return temp_file_path
+            # Make request with multipart form data
+            # Important: Do NOT set Content-Type header - let requests handle it automatically
+            return requests.request(
+                method,
+                url,
+                data=params,
+                params=params,
+                files=files,
+                headers=headers,
+                auth=(self.username, self.password),
+                verify=not self.ignore_cert
+            )
 
     def _make_request(self, url: str, method: str, params: dict = None, body: str | None = None,
                       headers: dict | None = None) -> Optional[
@@ -372,3 +415,22 @@ class MobiClient:
         except RequestException as e:
             print(f"Request failed: {e}")
             return None
+
+    def _parse_rdf(self, rdf_string: str, rdf_format: str) -> str:
+        """
+        Parse RDF data and serialize it to a temporary TTL file.
+
+        :param rdf_string: The RDF data as a string
+        :param rdf_format: The format of the input RDF data
+        :return: Path to the temporary TTL file
+        """
+        graph: Graph = rdflib.Graph().parse(data=rdf_string, format=rdf_format)
+
+        # Create a temporary file with .ttl extension
+        temp_file = tempfile.NamedTemporaryFile(mode='w', suffix='.ttl', delete=False)
+        temp_file_path = temp_file.name
+        temp_file.close()
+
+        # Serialize the graph to the temporary file in Turtle format
+        graph.serialize(destination=temp_file_path, format='turtle')
+        return temp_file_path

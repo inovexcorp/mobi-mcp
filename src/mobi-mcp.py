@@ -159,7 +159,8 @@ if __name__ == "__main__":
 
     @mcp.tool(name="create_ontology_record",
               description="Create a new ontology record from an RDF string and metadata in the Mobi system.")
-    def create_ontology_record(rdf_string: str, rdf_format: str, title: str, description: str, markdown_description: str | None = None,
+    def create_ontology_record(rdf_string: str, rdf_format: str, title: str, description: str,
+                               markdown_description: str | None = None,
                                keywords: list[str] | None = None):
         """
         Create a new ontology record in the Mobi system from an RDF string and the associated metadata.
@@ -177,6 +178,31 @@ if __name__ == "__main__":
         :return: The newly created ontology record.
         """
         return mobi.create_ontology(rdf_string, rdf_format, title, description, markdown_description, keywords)
+
+    @mcp.tool(name="get_branches_on_record",
+              description="Get the branches associated with a given record. This includes the commit ids on that branch.")
+    def get_branches_on_record(record_iri: str, offset: int = 0, limit: int = 20):
+        """
+        Get the branches associated with a specified record.
+
+        This function fetches a list of branches related to the provided record ID.
+        It supports pagination through the offset and limit parameters. The function
+        is well-suited for managing and retrieving data in scenarios with a large
+        number of branches.  It also allows grabbing the IRIs of commits within those
+        branches.
+
+        :param record_iri: The IRI (Internationalized Resource Identifier) of the record
+                           for which branches are to be retrieved.
+        :type record_iri: str
+        :param offset: The starting position of the records to fetch. Default is 0.
+        :type offset: int
+        :param limit: The maximum number of records to return in the response. Default is 20.
+        :type limit: int
+        :return: A list of branches associated with the specified record.
+        :rtype: list
+        """
+        return mobi.get_record_branches(record_iri, offset=offset, limit=limit)
+
 
     @mcp.tool(name="create_branch_on_record",
               description="Create a new branch on an existing record.")
@@ -204,6 +230,31 @@ if __name__ == "__main__":
         """
         return mobi.create_branch_on_record(record_iri, title, description, commit_iri)
 
+
+    @mcp.tool(name="create_commit_on_record",
+              description="Create a new commit on an existing record by uploading your latest changes.  The system"
+                          "will automatically calculate the differences and create a new commit.")
+    def update_ontology(record_iri: str, branch_iri: str, commit_iri: str, rdf_string: str, rdf_format: str):
+        """
+        Create a new commit on an existing record by uploading the latest changes. This method facilitates the
+        process of storing modifications by calculating the differences and appending them as a new commit
+        on the specified branch of the record.  If you are being asked to update the primary branch (master or main)
+        please confirm with the user that they do not instead want to create a new branch!  Users can get into trouble
+        for committing directly to master.
+
+        :param record_iri: The IRI identifying the record to update.
+        :type record_iri: str
+        :param branch_iri: The IRI representing the branch where the new commit will be created.
+        :type branch_iri: str
+        :param commit_iri: The IRI of the commit to use as the basis for changes.
+        :type commit_iri: str
+        :param rdf_string: The RDF data to be uploaded, as a string.
+        :type rdf_string: str
+        :param rdf_format: The format of the RDF data (e.g., 'turtle', 'rdf/xml', etc.).
+        :type rdf_format: str
+        :return: None
+        """
+        mobi.update_ontology(record_iri, branch_iri, commit_iri, rdf_string, rdf_format)
 
 
     # Start MCP server

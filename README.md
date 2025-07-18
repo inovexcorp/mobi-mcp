@@ -38,5 +38,14 @@ python script with the argument `--sse`).
 
 
 
+## Repository Structure
 
+The repository is organized to maintain a clean separation between the Mobi API interaction layer and the MCP protocol
+implementation:
+
+- **`src/mobi.py`** - Contains the core Mobi API client functionality, handling authentication, API calls, and data processing
+- **`src/mobi-mcp.py`** - The main MCP server implementation that bridges Mobi functionality with the Model Context Protocol
+- **`Dockerfile`** - Enables containerized deployment of the MCP server
+- **`Makefile`** - Provides convenient commands for environment setup and container management
+- **`requirements.txt`** - Lists all Python package dependencies needed for the project
 

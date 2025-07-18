@@ -1,13 +1,16 @@
 import json
+import os
+import tempfile
 import urllib.parse
-from os import getenv
 from typing import Optional, Dict, Any
 
-import dotenv
+import rdflib
 import requests
+from rdflib import Graph
 from requests import RequestException
 
 default_catalogs: str = "http://mobi.com/catalog-local"
+default_branch_type: str = "http://mobi.com/ontologies/catalog#Branch"
 rest_context: str = "mobirest"
 
 record_types: list[str] = [
@@ -177,6 +180,40 @@ class MobiClient:
             params["type"] = ",".join(types)
         return self._make_request(url, "GET", params)
 
+    def create_branch_on_record(self, record_id: str, title: str, description: str, commit_iri: str,
+                                catalog_id: str = default_catalogs, branch_type: str = default_branch_type):
+        """
+        Creates a branch on a specified record in the catalog. This method allows branching
+        off a specific record version, providing flexibility for version management and
+        content organization.
+
+        :param record_id: The unique identifier for the record to branch from.
+        :type record_id: str
+        :param title: The title of the new branch.
+        :type title: str
+        :param description: A description for the branch providing more context or details.
+        :type description: str
+        :param commit_iri: The commit identifier associated with the branch creation.
+        :type commit_iri: str
+        :param catalog_id: The identifier of the catalog where the record resides.
+            Defaults to `default_catalogs`.
+        :type catalog_id: str, optional
+        :param branch_type: The type of branch to be created, usually specifying behavior
+            or purpose. Defaults to `default_branch_type`.
+        :type branch_type: str, optional
+        :return: The response object resulting from the request to create the branch.
+        :rtype: object
+        """
+        url: str = (f"{self.base_url}/{rest_context}/catalogs/{urllib.parse.quote(catalog_id, safe='')}"
+                    f"/records/{urllib.parse.quote(record_id, safe='')}/branches")
+        params: dict = {
+            "type": branch_type,
+            "title": title,
+            "description": description,
+            "commitId": commit_iri,
+        }
+        return self._make_request(url, "POST", params)
+
     def get_shapes_graph(self, record_id: str, branch_id: str | None = None, commit_id: str | None = None,
                          rdf_format: str = "turtle"):
         """
@@ -212,29 +249,97 @@ class MobiClient:
             params["rdfFormat"] = rdf_format
         return self._make_request(url, "GET", params)
 
-    def _make_request(self, url: str, method: str, params: dict = None) -> Optional[Dict[Any, Any]]:
+    def create_ontology(self, rdf_string: str, rdf_format: str, title: str, description: str,
+                        markdown_description: str | None = None,
+                        keywords: list[str] | None = None) -> dict:
         """
-        Sends an HTTP request and processes the response.
+        Creates a new ontology by sending a request to a specified URL endpoint. The ontology is created
+        using RDF data provided in the input arguments. Additional metadata such as title, description,
+        optional markdown description, and keywords can also be supplied.
 
-        This method performs an HTTP request using the given URL and HTTP method. It can
-        accept optional parameters to include as part of the request. The request uses
-        basic authentication credentials and may optionally skip certificate verification
-        based on the session configuration. It handles various response scenarios, including
-        HTTP errors, empty responses, and unexpected or invalid response formats. If the
-        response is JSON, it attempts to parse and return it.
+        The function constructs a request payload and sends it with the RDF content parsed and formatted
+        as a TTL file. It uses an HTTP POST method to interact with the external service.
 
-        :param url:
-            The target URL for the HTTP request.
-        :param method:
-            The HTTP method to use (e.g., 'GET', 'POST', etc.).
-        :param params:
-            Optional dictionary of query parameters to be included in the request. Defaults to None.
-        :return:
-            A dictionary containing the parsed JSON response, or None if the request failed
-            or the response was not a valid JSON.
+        :param rdf_string: The RDF data to be used for creating the ontology.
+        :param rdf_format: The format of the RDF data provided (e.g., "xml", "turtle").
+        :param title: The title for the ontology being created.
+        :param description: A descriptive text for the ontology.
+        :param markdown_description: Optional markdown-formatted description of the ontology.
+        :param keywords: Optional list of keywords relevant to the ontology.
+        :return: The response of the HTTP POST request made to create the ontology.
         """
+        url: str = f"{self.base_url}/{rest_context}/ontologies"
+
+        # Parse RDF and get temporary file path
+        ttl_file_path = self._parse_rdf(rdf_string, rdf_format)
+
+        try:
+            # Prepare form data
+            data = {
+                "title": title,
+                "description": description
+            }
+
+            if markdown_description:
+                data["markdown"] = markdown_description
+            if keywords:
+                data["keywords"] = ",".join(keywords)
+
+            # Prepare files for multipart upload
+            with open(ttl_file_path, 'rb') as ttl_file:
+                files = {
+                    'file': ('ontology.ttl', ttl_file, 'text/turtle')
+                }
+
+                # Make request with multipart form data
+                # Important: Do NOT set Content-Type header - let requests handle it automatically
+                response = requests.post(
+                    url,
+                    data=data,
+                    files=files,
+                    auth=(self.username, self.password),
+                    verify=not self.ignore_cert
+                )
+
+                # Process response similar to _make_request method
+                if response.status_code is not 201:
+                    raise IOError(f"Error occurred creating ontology: {response.status_code}: "
+                                  f"{response.reason} - {response.text[:500]}")
+                else:
+                    return response.json()
+        finally:
+            # Clean up temporary file
+            try:
+                os.unlink(ttl_file_path)
+            except OSError:
+                pass  # File might already be deleted or not exist
+
+    def _parse_rdf(self, rdf_string: str, rdf_format: str) -> str:
+        """
+        Parse RDF data and serialize it to a temporary TTL file.
+
+        :param rdf_string: The RDF data as a string
+        :param rdf_format: The format of the input RDF data
+        :return: Path to the temporary TTL file
+        """
+        graph: Graph = rdflib.Graph().parse(data=rdf_string, format=rdf_format)
+
+        # Create a temporary file with .ttl extension
+        temp_file = tempfile.NamedTemporaryFile(mode='w', suffix='.ttl', delete=False)
+        temp_file_path = temp_file.name
+        temp_file.close()
+
+        # Serialize the graph to the temporary file in Turtle format
+        graph.serialize(destination=temp_file_path, format='turtle')
+        return temp_file_path
+
+    def _make_request(self, url: str, method: str, params: dict = None, body: str | None = None,
+                      headers: dict | None = None) -> Optional[
+        Dict[Any, Any]]:
         try:
             response = requests.request(method, url,
+                                        data=body,
+                                        headers=headers,
                                         params=params,
                                         auth=(self.username, self.password),
                                         verify=not self.ignore_cert)
@@ -267,19 +372,3 @@ class MobiClient:
         except RequestException as e:
             print(f"Request failed: {e}")
             return None
-
-
-if __name__ == "__main__":
-    """
-    Simple testing main functionality 
-    """
-    dotenv.load_dotenv()
-    base_url = getenv("MOBI_BASE_URL")
-    username = getenv("MOBI_USERNAME")
-    password = getenv("MOBI_PASSWORD")
-    ignore_cert = getenv("MOBI_IGNORE_CERT")
-    action: MobiClient = MobiClient(base_url, username, password, ignore_cert=ignore_cert == "true")
-    print(action.get_shapes_graph('https://mobi.com/records#26538d7f-ac68-479d-b415-8ca75ca49313'))
-    # print(action.entity_search("Threat"))
-    # print()
-    # print(action.get_ontology_data("https://mobi.com/records#6a535eff-2beb-4749-8549-6bf7de956a4e"))

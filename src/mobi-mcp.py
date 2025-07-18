@@ -157,6 +157,57 @@ if __name__ == "__main__":
         return mobi.get_shapes_graph(record_id, branch_id, commit_id)
 
 
+    @mcp.tool(name="create_ontology_record",
+              description="Create a new ontology record from an RDF string and metadata in the Mobi system.")
+    def create_ontology_record(rdf_string: str, rdf_format: str, title: str, description: str, markdown_description: str | None = None,
+                               keywords: list[str] | None = None):
+        """
+        Create a new ontology record in the Mobi system from an RDF string and the associated metadata.
+
+        This function utilizes the given RDF string to generate a new ontology record with the specified
+        title, description, and optional markdown description and keywords. The metadata enhances the
+        ontology entry with relevant descriptive information.  Suggested you confirm with the user prior to
+        performing this task.
+
+
+        :param rdf_string: The RDF data string to be used for creating the ontology record.
+        :param rdf_format: The format of the provided RDF string (e.g., "xml", "turtle").
+        :param title: The title of the ontology.
+        :param description: A textual description providing an overview of the ontology.
+        :param markdown_description: An optional markdown version of the description.
+        :param keywords: An optional list of keywords associated with the ontology record.
+        :return: The newly created ontology record.
+        """
+        return mobi.create_ontology(rdf_string, rdf_format, title, description, markdown_description, keywords)
+
+    @mcp.tool(name="create_branch_on_record",
+              description="Create a new branch on an existing record.")
+    def create_branch_on_record(record_iri: str, title: str, description: str, commit_iri: str):
+        """
+        Create a new branch on an existing record using the provided details.
+
+        This function facilitates the creation of a branch linked to a specific
+        record, represented by its IRI. It requires information about the title
+        and description of the branch. Additionally, a commit IRI is utilized
+        to anchor the branch creation to a specific commit.
+
+        :param record_iri: The IRI that identifies the record on which the branch
+            will be created.
+        :type record_iri: str
+        :param title: The title of the new branch to be created.
+        :type title: str
+        :param description: A brief description for the new branch.
+        :type description: str
+        :param commit_iri: The IRI of the commit to be used as a reference for
+            branch creation.
+        :type commit_iri: str
+        :return: The outcome of the branch creation process.
+        :rtype: (depends on return type of mobi.create_branch_on_record)
+        """
+        return mobi.create_branch_on_record(record_iri, title, description, commit_iri)
+
+
+
     # Start MCP server
     if args.sse:
         mcp.run(transport="sse")

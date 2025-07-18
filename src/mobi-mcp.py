@@ -166,7 +166,9 @@ if __name__ == "__main__":
 
         This function utilizes the given RDF string to generate a new ontology record with the specified
         title, description, and optional markdown description and keywords. The metadata enhances the
-        ontology entry with relevant descriptive information.
+        ontology entry with relevant descriptive information.  Suggested you confirm with the user prior to
+        performing this task.
+
 
         :param rdf_string: The RDF data string to be used for creating the ontology record.
         :param rdf_format: The format of the provided RDF string (e.g., "xml", "turtle").

@@ -2,6 +2,8 @@ import argparse
 from os import getenv
 
 from mcp.server import FastMCP
+from mcp import Resource
+from pydantic import HttpUrl
 
 from mobi import MobiClient
 
@@ -46,7 +48,16 @@ def parse_arguments():
 
 if __name__ == "__main__":
     args = parse_arguments()
-    mcp: FastMCP = FastMCP('Mobi MCP Server')
+    mcp: FastMCP = FastMCP(name='Mobi MCP Server',
+                           instructions="""
+                           This MCP server provides a series of tools that enable agentic interaction with a Mobi 
+                           system.  Mobi is a system for managing and storing semantic graph data artifacts, like 
+                           ontologies, SHACL shapes, SKOS vocabularies, and mappings.  The tools in this MCP server 
+                           allow you to interact with the system and help you manage these artifacts. Mobi uses a graph
+                           native, git-inspired system for storing and managing artifacts.  The system is designed to 
+                           behave similarly to a git repository per versioned record in Mobi, so apply similar best 
+                           practices when managing artifacts.
+                           """)
     mobi: MobiClient = init_mobi_client()
 
 
@@ -181,6 +192,7 @@ if __name__ == "__main__":
         """
         return mobi.create_ontology(rdf_string, rdf_format, title, description, markdown_description, keywords)
 
+
     @mcp.tool(name="get_branches_on_record",
               description="Get the branches associated with a given record. This includes the commit ids on that branch.")
     def get_branches_on_record(record_iri: str, offset: int = 0, limit: int = 20):
@@ -250,7 +262,8 @@ if __name__ == "__main__":
         :type branch_iri: str
         :param commit_iri: The IRI of the commit to use as the basis for changes.
         :type commit_iri: str
-        :param rdf_string: The RDF data to be uploaded, as a string.
+        :param rdf_string: The RDF data to be uploaded, as a string. It should be the full ontology data so that Mobi
+        can calculate the differences and semantically define the commit
         :type rdf_string: str
         :param rdf_format: The format of the RDF data (e.g., 'turtle', 'rdf/xml', etc.).
         :type rdf_format: str

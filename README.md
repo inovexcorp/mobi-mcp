@@ -1,5 +1,6 @@
 # Mobi MCP Server
-This is a Model Context Protocol server that will allow agentic interfacing with a given instance of [Mobi](https://mobi.solutions/).
+This is a Model Context Protocol server that will allow agentic interfacing with a given instance of 
+[Mobi](https://mobi.solutions/) ([GitHub](https://github.com/inovexcorp/mobi)).
 
 ## Prerequisites
 - Python 3.10 or higher (required for MCP package)

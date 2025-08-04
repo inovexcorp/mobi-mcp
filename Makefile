@@ -1,4 +1,4 @@
-.PHONY: init
+.PHONY: init docker run_docker
 
 ENGINE := $(shell command -v podman > /dev/null 2>&1 && echo podman || echo docker)
 

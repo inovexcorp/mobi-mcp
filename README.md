@@ -2,7 +2,7 @@
 This is a Model Context Protocol server that will allow agentic interfacing with a given instance of 
 [Mobi](https://mobi.solutions/) ([GitHub](https://github.com/inovexcorp/mobi)).
 
-<img src="./logo.png" alt="mobi-mcp-logo" style="width: 100px;" />
+<img src="./logo.png" alt="mobi-mcp-logo" style="width: 80px;" />
 
 ## Prerequisites
 - Python 3.10 or higher (required for MCP package)

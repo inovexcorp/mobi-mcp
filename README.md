@@ -77,9 +77,85 @@ The MCP server requires the following environment variables:
 - `MOBI_PASSWORD`: Password for Mobi authentication
 - `MOBI_IGNORE_CERT`: Set to `"true"` to ignore SSL certificate verification (useful for self-signed certificates)
 
-  
+## Repository Structure
+The repository is organized to maintain a clean separation between the Mobi API interaction layer and the MCP protocol
+implementation:
+
+- **`src/mobi.py`** - Contains the core Mobi API client functionality, handling authentication, API calls, and data processing
+- **`src/mobi-mcp.py`** - The main MCP server implementation that bridges Mobi functionality with the Model Context Protocol
+- **`Dockerfile`** - Enables containerized deployment of the MCP server
+- **`Makefile`** - Provides convenient commands for environment setup and container management
+- **`requirements.txt`** - Lists all Python package dependencies needed for the project
 
 
 
+## Current Tools
+The Mobi MCP Server exposes the following tools for interacting with your Mobi instance:
 
+### Search and Discovery Tools
 
+#### `record_search`
+Search the Mobi catalog for records matching specified criteria.
+- **Parameters:**
+  - `offset` (int): Starting index for pagination
+  - `limit` (int): Maximum number of records to retrieve
+  - `search_text` (str, optional): Text to search for in records
+  - `keywords` (list[str], optional): Keywords to match against records
+  - `types` (list[str], optional): Record types to filter by. Valid types:
+    - `http://mobi.com/ontologies/ontology-editor#OntologyRecord` (Ontology/Vocabulary)
+    - `http://mobi.com/ontologies/shapes-graph-editor#ShapesGraphRecord` (SHACL)
+    - `http://mobi.com/ontologies/delimited#MappingRecord` (Mappings)
+    - `http://mobi.com/ontologies/dataset#DatasetRecord` (Datasets)
+
+#### `entity_search`
+Search the Mobi catalog for records whose metadata contain a specified string.
+- **Parameters:**
+  - `search_for` (str): Substring to search for within entities' metadata
+  - `offset` (int): Starting point within the result set
+  - `limit` (int): Maximum number of entities to return
+  - `types` (list[str], optional): Entity types to filter by
+  - `keywords` (list[str], optional): Keywords to filter by
+
+### Data Retrieval Tools
+
+#### `fetch_ontology_data`
+Fetch ontology data for a given ontology record IRI.
+- **Parameters:**
+  - `ontology_iri` (str): The IRI of the record containing the ontology data (not the ontology IRI itself)
+- **Note:** Use the record IRI from search results, typically in the format `https://mobi.com/records#<uuid>`
+
+#### `get_shapes_graph`
+Retrieve the shapes graph for a specified record.
+- **Parameters:**
+  - `record_id` (str): Unique identifier for the record
+  - `branch_id` (str, optional): Branch identifier within the record
+  - `commit_id` (str, optional): Commit identifier to target
+
+### Content Creation Tools
+
+#### `create_ontology_record`
+Create a new ontology record from RDF data and metadata.
+- **Parameters:**
+  - `rdf_string` (str): The RDF data as a string
+  - `rdf_format` (str): Format of the RDF data (e.g., "xml", "turtle")
+  - `title` (str): Title of the ontology
+  - `description` (str): Textual description of the ontology
+  - `markdown_description` (str, optional): Markdown version of the description
+  - `keywords` (list[str], optional): Keywords associated with the ontology
+- **Note:** Confirmation with the user is recommended before creating new records
+
+### Version Control Tools
+
+#### `create_branch_on_record`
+Create a new branch on an existing record.
+- **Parameters:**
+  - `record_iri` (str): IRI of the record
+  - `title` (str): Title of the new branch
+  - `description` (str): Description of the new branch
+  - `commit_iri` (str): IRI of the commit to use as reference
+
+### Usage Notes
+- All tools interact with Mobi's git-inspired versioning system
+- Record IRIs are typically returned from search operations
+- The server follows semantic versioning practices similar to git repositories
+- Always verify record and branch IRIs before performing write operations

@@ -53,7 +53,7 @@ configure the application to use your MCP server by modifying the
         "MOBI_BASE_URL": "https://localhost:8443",
         "MOBI_USERNAME": "admin",
         "MOBI_PASSWORD": "admin",
-        "MOBI_IGNORE_CERT": "true"  // Set to "true" for self-signed certificates
+        "MOBI_IGNORE_CERT": "true"
       }
     }
   }

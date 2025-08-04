@@ -47,8 +47,8 @@ configure the application to use your MCP server by modifying the
 {
   "mcpServers": {
     "mobi": {
-      "command": "/Users/ben.gould/git/mobi-mcp/.venv/bin/python",
-      "args": ["/Users/ben.gould/git/mobi-mcp/src/mobi-mcp.py"],
+      "command": "/Users/{username}/git/mobi-mcp/.venv/bin/python",
+      "args": ["/Users/{username}/git/mobi-mcp/src/mobi-mcp.py"],
       "env": {
         "MOBI_BASE_URL": "https://localhost:8443",
         "MOBI_USERNAME": "admin",

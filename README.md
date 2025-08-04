@@ -1,5 +1,5 @@
 # Mobi MCP Server
-This is a Model Context Protocol server that will allow agentic interfacing with a given instance of Mobi.
+This is a Model Context Protocol server that will allow agentic interfacing with a given instance of [Mobi](https://mobi.solutions/).
 
 ## Prerequisites
 - Python 3.10 or higher (required for MCP package)
@@ -63,6 +63,9 @@ configure the application to use your MCP server by modifying the
 
 Claude Desktop leverages the stdio MCP transport, but this server also supports SSE as well (you can run the `mobi-mcp`
 python script with the argument `--sse`).
+
+This also assumes that you are running an instance of Mobi as well. If you want to try and run one locally,
+see instructions [HERE](https://inovexcorp.github.io/mobi-docs/latest/index.html#installing_the_docker_image).
 
 ## Configuration
 
